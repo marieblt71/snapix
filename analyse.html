@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Analyse SnapView</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+  :root{
+    --bg: #070910;
+    --glow1: #6ee7ff;
+    --glow2: #a78bfa;
+    --glow3: #ffd166;
+    --text: #eef2ff;
+    --sub: #b9c2da;
+    --card: rgba(255, 255, 255, 0.13);
+    --card-blur: blur(24px) saturate(180%);
+    --card-border: rgba(255,255,255,0.32);
+    --ring: #6ee7ff88;
+    --border: #1a2340;
+    --ok: #34d399;
+    --radius: 22px;
+    --primary: #6aa3ff;
+    --primary-hover: #4ea1ff;
+    --transition-speed: .3s;
+  }
+
+  html {
+    height: 100%;
+    background-color: #181a20;
+  }
+  body{
+    margin: 0;
+    font-family: 'SF Pro Display','SF Pro Text','San Francisco','-apple-system',BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 16px 80px;
+    overflow-x: hidden;
+    min-height: 100vh;
+    min-height: 100svh;
+    background-color: #181a20;
+    position: relative;
+  }
+
+  body::before{
+    content:"";
+    position: fixed;
+    inset: -40vh;
+    z-index: -1;
+    background:
+      radial-gradient(60vmax 60vmax at 10% 10%, color-mix(in srgb, var(--glow1) 18%, transparent) 0%, transparent 60%),
+      radial-gradient(60vmax 60vmax at 90% 30%, color-mix(in srgb, var(--glow2) 22%, transparent) 0%, transparent 60%),
+      linear-gradient(120deg, #181a20 60%, #23243a 100%);
+    background-attachment: fixed;
+  }
+
+  .particle {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.13;
+    z-index: 0;
+    background: radial-gradient(circle, var(--glow1) 0%, var(--glow2) 60%, transparent 100%);
+    box-shadow: 0 0 18px 6px var(--glow2);
+    filter: blur(1px);
+    animation: float 14s ease-in-out infinite alternate;
+  }
+  .particle.p1 { width: 70px; height: 70px; left: 12vw; top: 12vh; animation-delay: 0s; }
+  .particle.p2 { width: 45px; height: 45px; left: 75vw; top: 18vh; animation-delay: 2s; }
+  .particle.p3 { width: 35px; height: 35px; left: 52vw; top: 82vh; animation-delay: 4s; }
+  .particle.p4 { width: 90px; height: 90px; left: 68vw; top: 68vh; animation-delay: 1s; }
+  .particle.p5 { width: 28px; height: 28px; left: 22vw; top: 62vh; animation-delay: 3s; }
+
+  @keyframes float {
+    0% { transform: translateY(0) scale(1);}
+    50% { transform: translateY(-40px) scale(1.08);}
+    100% { transform: translateY(0) scale(1);}
+  }
+
+  header {
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    user-select: none;
+    z-index: 2;
+    animation: fadeInDown 1.2s ease both;
+  }
+  @keyframes fadeInDown {
+    0% { opacity: 0; transform: translateY(-60px);}
+    100% { opacity: 1; transform: translateY(0);}
+  }
+
+  h1 {
+    margin:0; font-size:clamp(28px,5vw,44px); font-weight:900; letter-spacing:.4px;
+    background:conic-gradient(from 180deg, #e9f2ff, #a0e7ff, #c7b6ff, #ffe08a, #e9f2ff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 30px rgba(110,231,255,.25);
+  }
+
+  #execution-text {
+    font-size: 18px;
+    margin-top: 10px;
+    color: var(--sub);
+    text-shadow: 0 0 4px #6ee7ff55;
+    animation: fadeIn 1.5s both;
+  }
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(40px);}
+    100% { opacity: 1; transform: translateY(0);}
+  }
+
+  .decrypt-bar {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 28px auto;
+    background: var(--card);
+    backdrop-filter: var(--card-blur);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px #6ee7ff22, 0 2px 12px #a78bfa22, 0 1.5px 16px 0 rgba(255,255,255,0.08);
+    border: 1.5px solid var(--card-border);
+    height: 48px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
+  }
+  .decrypt-bar-glow {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 0%;
+    background: linear-gradient(90deg, #6ee7ff 0%, #a78bfa 100%);
+    opacity: 0.13;
+    filter: blur(12px);
+    transition: width 0.6s ease;
+    z-index: 1;
+  }
+  .decrypt-bar-text {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 0 18px;
+    font-size: 18px;
+    color: var(--primary);
+    text-shadow: 0 0 8px #6ee7ff55;
+    font-family: 'Inter', monospace, sans-serif;
+    display: flex;
+    align-items: center;
+  }
+  .decrypt-bar-cursor {
+    width: 12px;
+    height: 22px;
+    background: var(--primary);
+    margin-left: 6px;
+    border-radius: 2px;
+    opacity: 0.6;
+    animation: blink 0.8s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #progress-bar-wrapper {
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #progress-bar-container {
+    flex: 1;
+    height: 14px;
+    background: var(--card);
+    backdrop-filter: var(--card-blur);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid var(--card-border);
+    box-shadow: 0 0 12px #6ee7ff22, 0 1.5px 16px 0 rgba(255,255,255,0.08);
+  }
+  #progress {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6ee7ff 0%, #a78bfa 100%);
+    border-radius: 12px;
+    transition: width 0.6s ease;
+    box-shadow: 0 0 12px #6ee7ff;
+    animation: progressPulse 2s infinite alternate;
+  }
+  @keyframes progressPulse {
+    from { box-shadow: 0 0 10px #6ee7ff;}
+    to { box-shadow: 0 0 20px #a78bfa;}
+  }
+  #progress-percent {
+    min-width: 50px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 16px;
+    color: #a78bfa;
+    text-shadow: 0 0 6px #a78bfa55;
+  }
+
+  .cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    width: 100%;
+    max-width: 600px;
+    z-index: 2;
+  }
+  .card {
+    background: var(--card);
+    backdrop-filter: var(--card-blur);
+    border-radius: 22px;
+    padding: 22px 28px;
+    border: 1.5px solid var(--card-border);
+    box-shadow: 0 8px 32px #6ee7ff22, 0 2px 12px #a78bfa22, 0 1.5px 16px 0 rgba(255,255,255,0.08);
+    transform: translateY(40px);
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .card.visible { transform: translateY(0); opacity: 1; }
+  .card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 10px 25px #6ee7ff33, 0 0 18px #a78bfa44;
+  }
+  .card-header { display: flex; align-items: center; gap: 14px; }
+  .card-icon { width: 34px; height: 34px; filter: drop-shadow(0 0 6px #a78bfa55); }
+  .card-title { font-size: 19px; font-weight: 700; color: #a78bfa; text-shadow: 0 0 6px #6ee7ff55; }
+  .card-desc { font-size: 15px; color: #b9c2da; margin-left: 48px; opacity: 0.85; text-shadow: 0 0 3px #6ee7ff33; }
+
+  @media (max-width: 700px) {
+    h1 { font-size: 24px; }
+    #execution-text { font-size: 14px; }
+    .decrypt-bar-text { font-size: 14px; }
+    .card-title { font-size: 16px; }
+    .card-desc { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+  <div class="particle p1"></div>
+  <div class="particle p2"></div>
+  <div class="particle p3"></div>
+  <div class="particle p4"></div>
+  <div class="particle p5"></div>
+
+  <div class="decrypt-bar">
+    <div class="decrypt-bar-glow" id="decrypt-bar-glow"></div>
+    <div class="decrypt-bar-text">
+      <span id="decrypt-bar-content"></span><span class="decrypt-bar-cursor"></span>
+    </div>
+  </div>
+
+  <header>
+    <h1>
+      <span style="color:var(--primary);background:none;-webkit-background-clip:initial;background-clip:initial;text-shadow:0 0 18px #6ee7ff55;font-weight:900;">ANALYSE EN </span>
+      <span style="color:var(--glow2);background:none;-webkit-background-clip:initial;background-clip:initial;text-shadow:0 0 18px #a78bfa55;font-weight:900;">COURS</span>
+    </h1>
+    <div id="execution-text">Décryptage et analyse des données confidentielles...</div>
+  </header>
+
+  <div id="progress-bar-wrapper">
+    <div id="progress-bar-container"><div id="progress"></div></div>
+    <div id="progress-percent">0%</div>
+  </div>
+
+  <div class="cards-list" id="cards-list">
+    <div class="card" id="card-connexion">
+      <div class="card-header">
+        <span class="card-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6ee7ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h2m16 0h2M12 2v2m0 16v2M7.5 7.5l1.5 1.5m6 6l1.5 1.5M7.5 16.5l1.5-1.5m6-6l1.5-1.5"/></svg>
+        </span>
+        <span class="card-title">Connexion aux serveurs Snapchat</span>
+      </div>
+      <div class="card-desc">Connexion sécurisée établie</div>
+    </div>
+
+    <div class="card" id="card-protection">
+      <div class="card-header">
+        <span class="card-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+        <span class="card-title">Contournement des protections</span>
+      </div>
+      <div class="card-desc">Protocoles de sécurité neutralisés</div>
+    </div>
+
+    <div class="card" id="card-recherche">
+      <div class="card-header">
+        <span class="card-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffd166" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <span class="card-title">Recherche du profil utilisateur</span>
+      </div>
+      <div class="card-desc">ID localisé dans l’index public</div>
+    </div>
+
+    <div class="card" id="card-extraction">
+      <div class="card-header">
+        <span class="card-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6ee7ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </span>
+        <span class="card-title">Extraction des données privées</span>
+      </div>
+      <div class="card-desc">Téléchargement des paquets JSON</div>
+    </div>
+
+    <div class="card" id="card-decrypt">
+      <div class="card-header">
+        <span class="card-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        <span class="card-title">Décryptage des informations</span>
+      </div>
+      <div class="card-desc">Données décodées avec succès</div>
+    </div>
+  </div>
+
+<script>
+  const decryptTexts = [
+    "Connexion sécurisée au serveur...",
+    "Clé AES 256 bits détectée.",
+    "Déchiffrement des métadonnées...",
+    "Analyse des paquets réseau...",
+    "Extraction des identifiants...",
+    "Vérification de l'intégrité...",
+    "Décodage des données privées...",
+    "Synchronisation des modules...",
+    "Déchiffrement terminé."
+  ];
+  let decryptIndex = 0, decryptChar = 0;
+  const decryptContent = document.getElementById('decrypt-bar-content');
+  const decryptGlow = document.getElementById('decrypt-bar-glow');
+
+  function typeLine(line, cb) {
+    decryptContent.textContent = "";
+    decryptChar = 0;
+    (function loop() {
+      if (decryptChar <= line.length) {
+        decryptContent.textContent = line.slice(0, decryptChar);
+        decryptChar++;
+        setTimeout(loop, 20);
+      } else setTimeout(cb, 400);
+    })();
+  }
+  function nextLine() {
+    if (decryptIndex >= decryptTexts.length) { decryptGlow.style.width = "100%"; return; }
+    decryptGlow.style.width = ((decryptIndex+1)/decryptTexts.length*100) + "%";
+    typeLine(decryptTexts[decryptIndex], () => { decryptIndex++; nextLine(); });
+  }
+
+  const cards = document.querySelectorAll('.card');
+  const progressBar = document.getElementById('progress');
+  const progressPercent = document.getElementById('progress-percent');
+  let progressValue = 0;
+
+  function advance(target, duration) {
+    return new Promise(res=>{
+      const steps=40, start=progressValue, diff=target-start;
+      let cur=0;
+      (function step(){
+        cur++;
+        progressValue = start + diff*cur/steps;
+        progressBar.style.width=progressValue+'%';
+        progressPercent.textContent=Math.floor(progressValue)+'%';
+        if(cur<steps) setTimeout(step,duration/steps); else res();
+      })();
+    });
+  }
+
+  function showCards(i=0) {
+    if(i>=cards.length){ setTimeout(()=>window.location.href="finalcorent.html",600); return; }
+    const c=cards[i]; c.classList.add('visible');
+    advance(((i+1)/cards.length)*100,800).then(()=>showCards(i+1));  /* <-- MODIFICATION ICI (2000 → 800) */
+  }
+
+  window.addEventListener('DOMContentLoaded', ()=>{
+    nextLine();
+    showCards();
+  });
+</script>
+<script src="analyse-user.js"></script>
+</body>
+</html>
